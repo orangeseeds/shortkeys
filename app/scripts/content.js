@@ -4,6 +4,8 @@ import Mousetrap from 'mousetrap'
 let Shortkeys = {}
 Shortkeys.keys = []
 
+let browser = chrome
+
 /**
  * Helper function for fetching the full key shortcut config given a keyboard combo.
  *
