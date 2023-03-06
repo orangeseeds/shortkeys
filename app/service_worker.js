@@ -56,33 +56,29 @@ let selectTab = (direction) => {
   })
 }
 
-const jumpToNextTab = function(forward, currentIndex, tabs) {
-  let toSelect = tabs[(currentIndex + (forward ? 1 : -1) + tabs.length) % tabs.length]
-  if (toSelect.groupId == -1) {
-    browser.tabs.update(toSelect.id, { active: true })
-    return
-  }
+const jumpToNextTab = async function(forward, currentIndex, tabs) {
+  let toSelect
+  let updated = false
 
-  chrome.tabGroups.get(toSelect.groupId, (group) => {
-    if (!group.collapsed) {
+  for (let i = 1; i < tabs.length; i++) {
+    toSelect = tabs[(currentIndex + (forward ? i : -i) + tabs.length) % tabs.length]
+    if (toSelect.groupId != -1) {
+      await browser.tabGroups.get(toSelect.groupId)
+        .then((group) => {
+          if (!group.collapsed) {
+            browser.tabs.update(toSelect.id, { active: true })
+            updated = true
+          }
+        })
+      if (updated) {
+        break
+      }
+    }
+    else {
       browser.tabs.update(toSelect.id, { active: true })
-      return
+      break
     }
-
-    for (let i = 0; i < tabs.length; i++) {
-      if (forward) {
-        currentIndex += 1
-        toSelect = tabs[(currentIndex + 1 + tabs.length) % tabs.length]
-      } else {
-        currentIndex -= 1
-        toSelect = tabs[(currentIndex - 1 + tabs.length) % tabs.length]
-      }
-      if (toSelect.groupId == -1) {
-        browser.tabs.update(toSelect.id, { active: true });
-        return
-      }
-    }
-  })
+  }
 }
 
 const forceJumpToNextTab = function(forward, currentIndex, tabs) {
@@ -93,7 +89,6 @@ const forceJumpToNextTab = function(forward, currentIndex, tabs) {
 
 
 const toggleCollapseCurrentGroup = () => {
-  console.log("Collapsing")
   browser.tabs.query({ currentWindow: true }).then(function(tabs) {
     if (tabs.length <= 1) {
       return
